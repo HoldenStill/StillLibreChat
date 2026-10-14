@@ -155,7 +155,39 @@ class ModelEndHandler {
       if (!usage) {
         return;
       }
+      const rawUsage =
+        data?.output?.response_metadata?.usage ?? data?.output?.additional_kwargs?.usage;
       let taggedUsage = contextualizeModelUsage(usage, metadata, agentContext);
+      if (
+        typeof rawUsage?.cost === 'number' &&
+        Number.isFinite(rawUsage.cost) &&
+        rawUsage.cost >= 0 &&
+        taggedUsage.cost == null
+      ) {
+        taggedUsage.cost = rawUsage.cost;
+      }
+      const rawCachedTokens = rawUsage?.prompt_tokens_details?.cached_tokens;
+      if (
+        rawCachedTokens != null &&
+        taggedUsage.input_token_details?.cache_read == null &&
+        taggedUsage.cache_read_input_tokens == null
+      ) {
+        taggedUsage.input_token_details = {
+          ...taggedUsage.input_token_details,
+          cache_read: rawCachedTokens,
+        };
+      }
+      const rawCacheWriteTokens = rawUsage?.prompt_tokens_details?.cache_write_tokens;
+      if (
+        rawCacheWriteTokens != null &&
+        taggedUsage.input_token_details?.cache_creation == null &&
+        taggedUsage.cache_creation_input_tokens == null
+      ) {
+        taggedUsage.input_token_details = {
+          ...taggedUsage.input_token_details,
+          cache_creation: rawCacheWriteTokens,
+        };
+      }
       /** Hidden intermediate sequential-agent calls are billed but never shown.
        *  Tag them non-primary on the COLLECTED usage too (not just the emit) so
        *  recordCollectedUsage excludes their output from the parent's tokenCount
@@ -193,6 +225,7 @@ class ModelEndHandler {
             model: taggedUsage.model,
             provider: taggedUsage.provider,
             usage_type: taggedUsage.usage_type,
+            ...(typeof taggedUsage.cost === 'number' ? { cost: taggedUsage.cost } : {}),
             /** Producing agent for per-endpoint pricing; consumed by the emit
              *  cost resolver and not included in the emitted/persisted payload. */
             agentId: taggedUsage.agentId,

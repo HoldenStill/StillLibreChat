@@ -9,6 +9,7 @@ import {
   toAbsoluteFilePath,
 } from '~/utils';
 import Mermaid, { MermaidErrorBoundary } from '~/components/Messages/Content/Mermaid';
+import WaveDromViewer from '~/components/Artifacts/WaveDromViewer';
 import { useCodeBlockContext, useMediaContext } from '~/Providers';
 import CodeBlock from '~/components/Messages/Content/CodeBlock';
 import useHasAccess from '~/hooks/Roles/useHasAccess';
@@ -40,14 +41,21 @@ export const code: React.ElementType = memo(function MarkdownCode({
     permissionType: PermissionTypes.RUN_CODE,
     permission: Permissions.USE,
   });
-  const match = /language-(\w+)/.exec(className ?? '');
+  const match = /language-([\w./-]+)/.exec(className ?? '');
   const lang = match && match[1];
-  const isMath = lang === 'math';
-  const isMermaid = lang === 'mermaid';
+  const lowerLang = lang?.toLowerCase() ?? '';
+  const isMath = lowerLang === 'math';
+  const isMermaid = lowerLang === 'mermaid';
+  const isWaveDrom =
+    lowerLang === 'wavedrom' ||
+    lowerLang === 'wavejson' ||
+    lowerLang === 'application/vnd.wavedrom';
   const isSingleLine = isSingleLineCode(children);
 
   const { getNextIndex, getNextMermaidIndex, resetCounter } = useCodeBlockContext();
-  const blockIndex = useRef(getNextIndex(isMath || isMermaid || isSingleLine)).current;
+  const blockIndex = useRef(
+    getNextIndex(isMath || isMermaid || isWaveDrom || isSingleLine),
+  ).current;
   /* Mermaid fences do not consume a code-block index, so every one of them in a
    * message would otherwise share `blockIndex` and collapse onto a single
    * artifact id. They carry their own sequence instead. */
@@ -66,6 +74,9 @@ export const code: React.ElementType = memo(function MarkdownCode({
         <Mermaid id={`mermaid-${mermaidIndex}`}>{content}</Mermaid>
       </MermaidErrorBoundary>
     );
+  } else if (isWaveDrom) {
+    const content = typeof children === 'string' ? children : String(children);
+    return <WaveDromViewer content={content} inline />;
   } else if (isSingleLine) {
     return (
       <code onDoubleClick={handleDoubleClick} className={className}>
@@ -89,14 +100,22 @@ export const codeNoExecution: React.ElementType = memo(function MarkdownCodeNoEx
   className,
   children,
 }: TCodeProps) {
-  const match = /language-(\w+)/.exec(className ?? '');
+  const match = /language-([\w./-]+)/.exec(className ?? '');
   const lang = match && match[1];
+  const lowerLang = lang?.toLowerCase() ?? '';
 
-  if (lang === 'math') {
+  if (lowerLang === 'math') {
     return children;
-  } else if (lang === 'mermaid') {
+  } else if (lowerLang === 'mermaid') {
     const content = typeof children === 'string' ? children : String(children);
     return <Mermaid>{content}</Mermaid>;
+  } else if (
+    lowerLang === 'wavedrom' ||
+    lowerLang === 'wavejson' ||
+    lowerLang === 'application/vnd.wavedrom'
+  ) {
+    const content = typeof children === 'string' ? children : String(children);
+    return <WaveDromViewer content={content} inline />;
   } else if (isSingleLineCode(children)) {
     return (
       <code onDoubleClick={handleDoubleClick} className={className}>

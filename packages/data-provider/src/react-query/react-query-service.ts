@@ -4,6 +4,7 @@ import type {
   UseMutationResult,
   QueryObserverResult,
 } from '@tanstack/react-query';
+import type { TPromoteFileRequest, TPromoteFileResponse } from '../types/files';
 import type { MCPReinitializeResponse } from '../types/mcpServers';
 import { MCPServerConnectionStatusResponse } from '../types/queries';
 import { Constants, initialModelsConfig } from '../config';
@@ -568,4 +569,30 @@ export const useDeleteAgentApiKeyMutation = (): UseMutationResult<void, unknown,
       queryClient.invalidateQueries([QueryKeys.agentApiKeys]);
     },
   });
+};
+
+export const useGetOpenRouterEndpointsQuery = (
+  model?: string | null,
+  config?: UseQueryOptions<t.TOpenRouterEndpointsResponse>,
+): QueryObserverResult<t.TOpenRouterEndpointsResponse> => {
+  const normalizedModel = typeof model === 'string' ? model.trim() : '';
+  return useQuery<t.TOpenRouterEndpointsResponse>(
+    [QueryKeys.openRouterEndpoints, normalizedModel],
+    () => dataService.getOpenRouterModelEndpoints(normalizedModel),
+    {
+      enabled: Boolean(normalizedModel && normalizedModel.includes('/')),
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 10 * 60 * 1000,
+      ...config,
+    },
+  );
+};
+
+export const usePromoteFileMutation = (): UseMutationResult<
+  TPromoteFileResponse,
+  unknown,
+  TPromoteFileRequest
+> => {
+  return useMutation((payload: TPromoteFileRequest) => dataService.promoteFile(payload));
 };

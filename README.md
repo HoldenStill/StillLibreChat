@@ -67,6 +67,25 @@
 
 Read the [full v0.8.8 changelog](https://www.librechat.ai/changelog/v0.8.8).
 
+## 🛠️ Custom Fork Enhancements
+
+This fork extends upstream LibreChat with five specialized, drop-in compatible capabilities while maintaining 100% backward compatibility with existing `.env`, `librechat.yaml`, and Docker volume mounts:
+
+1. **[Granular Per-Message Cost, Token Tracking & Cache Warmth Indicator](docs/custom_features/PER_MESSAGE_COSTS.md)**
+   - Extracts and persists per-turn USD cost (`cost`), token breakdown (`tokenUsage`: prompt, completion, total, cached tokens, input/output cost, cache savings), and prompt cache warmth (`cacheHit`) on MongoDB `Message` documents.
+   - Displays a compact telemetry pill in assistant message footers with a green bolt indicator for prompt cache hits, detailed hover tooltip, and a **Settings → Chat** visibility toggle.
+2. **[Dynamic OpenRouter Provider & Live Pricing Selector](docs/custom_features/OPENROUTER_PROVIDER_ROUTING.md)**
+   - Adds an authenticated `GET /api/models/openrouter/endpoints?model=<author>/<slug>` proxy backed by a 10-minute Redis/Keyv cache (`EX 600`).
+   - Provides a Chat Header provider selector popover supporting `Auto (Cheapest / Price Floor)` (`provider: { sort: "price" }`) or explicit host routing (`provider: { order: [selectedProvider], allow_fallbacks: true }`) with live per-1M pricing, context limits, and latency metrics.
+3. **[One-Click "Promote to Exports / Stage to Vault" for Artifacts](docs/custom_features/ARTIFACT_PROMOTION_AND_STORAGE.md)**
+   - Adds `POST /api/files/promote` with strict path-traversal sanitization and hardlink-first (`fs.link` → `fs.copyFile`) promotion from `/mnt/data/` or artifact content into `/app/exports/` or `/app/vault/staging/`.
+   - Integrates **Save to Exports** and **Stage to Vault** actions across the Artifact preview header, inline artifact cards, and downloadable file attachments.
+4. **[Tailscale Identity-Based Header Authentication (SSO Middleware)](docs/custom_features/TAILSCALE_SSO_SETUP.md)**
+   - Supports zero-login reverse-proxy authentication (`TRUST_PROXY_AUTH=true` and `PROXY_AUTH_ADMIN_EMAIL`) via `Tailscale-User-Login`, `X-Forwarded-User`, and `X-Webauth-User` headers, with automatic fallback to standard email/password login when headers are absent.
+5. **[Telemetry, CSV & Waveform Artifact Viewers](docs/custom_features/TELEMETRY_AND_WAVEFORM_VIEWERS.md)**
+   - **WaveDrom Digital Timing Viewer**: Native SVG renderer for `application/vnd.wavedrom` and `wavejson` code blocks/artifacts (SPI, I2C, UART, clocks, buses, edges, and phase/scale modifiers).
+   - **Interactive CSV Time-Series Telemetry Viewer**: Switchable **Time-Series Chart** / **Table** preview for CSV artifacts and attachments with multi-channel SVG plotting, hover crosshair readout, and interactive zoom/pan controls.
+
 # ✨ Features
 
 - 🖥️ **UI & Experience** inspired by ChatGPT with enhanced design and features

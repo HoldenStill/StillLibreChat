@@ -5,6 +5,7 @@ import type {
   TResponseUsage,
   TTokenUsageEvent,
   TContextUsageEvent,
+  TMessageTokenUsage,
   TTransactionsConfig,
 } from 'librechat-data-provider';
 import type { SubagentUsageEvent as AgentsSubagentUsageEvent } from '@librechat/agents';
@@ -217,6 +218,9 @@ export function computeUsageCostUSD(
   pricing: PricingFns,
   endpointTokenConfig?: EndpointTokenConfig,
 ): number {
+  if (typeof usage.cost === 'number' && Number.isFinite(usage.cost) && usage.cost >= 0) {
+    return usage.cost;
+  }
   const { inputOnly, cacheCreation, cacheRead, completion } = splitUsage(usage);
   /** user/context/conversationId only populate the transaction doc, which is
    *  discarded here — only `tokenValue` (credits) is summed */
@@ -244,6 +248,206 @@ export function computeUsageCostUSD(
         );
   const credits = entries.reduce((sum, entry) => sum + Math.abs(entry.tokenValue), 0);
   return credits / 1e6;
+}
+
+export interface BuildMessageTelemetryParams {
+  collectedUsage?: ReadonlyArray<UsageMetadata | null | undefined>;
+  usageEvents?: ReadonlyArray<TTokenUsageEvent>;
+  fallbackUsage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    model?: string;
+    cost?: number;
+  };
+  pricing?: PricingFns;
+  endpointTokenConfig?: EndpointTokenConfig;
+  resolveEndpointTokenConfig?: (usage: UsageMetadata) => EndpointTokenConfig | undefined;
+}
+
+export interface MessageTelemetryResult {
+  cost: number;
+  tokenUsage: TMessageTokenUsage;
+  cacheHit: boolean;
+}
+
+function roundUSD6(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    return 0;
+  }
+  return Math.round(value * 1e6) / 1e6;
+}
+
+/**
+ * Computes per-message telemetry (`cost`, `tokenUsage`, `cacheHit`) from collected
+ * provider usage metadata (or emitted usage events / fallback token counts).
+ * Prefers direct provider-reported USD `cost` (e.g. OpenRouter usage.cost) when
+ * present, falling back to prompt/completion/cache rate multipliers.
+ */
+export function buildMessageTelemetry(
+  params: BuildMessageTelemetryParams,
+): MessageTelemetryResult | undefined {
+  const {
+    collectedUsage,
+    usageEvents,
+    fallbackUsage,
+    pricing,
+    endpointTokenConfig,
+    resolveEndpointTokenConfig,
+  } = params;
+
+  const items: UsageMetadata[] = [];
+  if (Array.isArray(collectedUsage) && collectedUsage.length > 0) {
+    for (const u of collectedUsage) {
+      if (u != null) {
+        items.push(u);
+      }
+    }
+  } else if (Array.isArray(usageEvents) && usageEvents.length > 0) {
+    for (const ev of usageEvents) {
+      if (ev != null) {
+        items.push({
+          input_tokens: ev.input_tokens,
+          output_tokens: ev.output_tokens,
+          total_tokens: ev.total_tokens,
+          input_token_details: ev.input_token_details,
+          model: ev.model,
+          provider: ev.provider,
+          cost: ev.cost,
+        });
+      }
+    }
+  } else if (
+    fallbackUsage &&
+    ((Number(fallbackUsage.promptTokens) || 0) > 0 ||
+      (Number(fallbackUsage.completionTokens) || 0) > 0)
+  ) {
+    const prompt = Math.max(0, Number(fallbackUsage.promptTokens) || 0);
+    const completion = Math.max(0, Number(fallbackUsage.completionTokens) || 0);
+    items.push({
+      input_tokens: prompt,
+      output_tokens: completion,
+      total_tokens: prompt + completion,
+      model: fallbackUsage.model,
+      cost: fallbackUsage.cost,
+    });
+  }
+
+  if (items.length === 0) {
+    return undefined;
+  }
+
+  let promptTokens = 0;
+  let completionTokens = 0;
+  let totalTokens = 0;
+  let cachedTokens = 0;
+  let cacheWriteTokens = 0;
+  let totalCost = 0;
+  let inputCost = 0;
+  let outputCost = 0;
+  let cacheSavings = 0;
+
+  for (const usage of items) {
+    const { inputOnly, cacheCreation, cacheRead, totalInput, completion } = splitUsage(usage);
+    promptTokens += totalInput;
+    completionTokens += completion;
+    totalTokens += totalInput + completion;
+    cachedTokens += cacheRead;
+    cacheWriteTokens += cacheCreation;
+
+    const cfg = resolveEndpointTokenConfig
+      ? resolveEndpointTokenConfig(usage)
+      : endpointTokenConfig;
+
+    let callInputCost = 0;
+    let callOutputCost = 0;
+    let callSavings = 0;
+
+    if (pricing) {
+      try {
+        const inputMult = Math.abs(
+          pricing.getMultiplier({
+            tokenType: 'prompt',
+            model: usage.model,
+            endpointTokenConfig: cfg,
+            inputTokenCount: totalInput,
+          }),
+        );
+        const outputMult = Math.abs(
+          pricing.getMultiplier({
+            tokenType: 'completion',
+            model: usage.model,
+            endpointTokenConfig: cfg,
+            inputTokenCount: totalInput,
+          }),
+        );
+        const writeMult = Math.abs(
+          pricing.getCacheMultiplier({
+            cacheType: 'write',
+            model: usage.model,
+            endpointTokenConfig: cfg,
+            inputTokenCount: totalInput,
+          }) ?? inputMult,
+        );
+        const readMult = Math.abs(
+          pricing.getCacheMultiplier({
+            cacheType: 'read',
+            model: usage.model,
+            endpointTokenConfig: cfg,
+            inputTokenCount: totalInput,
+          }) ?? inputMult,
+        );
+
+        callInputCost =
+          (inputOnly * inputMult + cacheCreation * writeMult + cacheRead * readMult) / 1e6;
+        callOutputCost = (completion * outputMult) / 1e6;
+        if (cacheRead > 0 && inputMult > readMult) {
+          callSavings = (cacheRead * (inputMult - readMult)) / 1e6;
+        }
+      } catch {
+        // Ignore pricing lookup failures for unknown models
+      }
+    }
+
+    if (typeof usage.cost === 'number' && Number.isFinite(usage.cost) && usage.cost >= 0) {
+      totalCost += usage.cost;
+      if (callInputCost + callOutputCost > 0) {
+        const uncachedCost = callInputCost + callSavings + callOutputCost;
+        if (cacheRead > 0 && callSavings === 0 && uncachedCost > usage.cost) {
+          callSavings = uncachedCost - usage.cost;
+        }
+        const boundedOutput = Math.min(usage.cost, callOutputCost);
+        outputCost += boundedOutput;
+        inputCost += Math.max(0, usage.cost - boundedOutput);
+      } else {
+        inputCost += usage.cost;
+      }
+      cacheSavings += callSavings;
+    } else {
+      const computed = callInputCost + callOutputCost;
+      totalCost += computed;
+      inputCost += callInputCost;
+      outputCost += callOutputCost;
+      cacheSavings += callSavings;
+    }
+  }
+
+  const cacheHit = cachedTokens > 0;
+  const tokenUsage: TMessageTokenUsage = {
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    ...(cachedTokens > 0 ? { cachedTokens } : {}),
+    ...(cacheWriteTokens > 0 ? { cacheWriteTokens } : {}),
+    inputCost: roundUSD6(inputCost),
+    outputCost: roundUSD6(outputCost),
+    ...(cacheHit || cacheSavings > 0 ? { cacheSavings: roundUSD6(cacheSavings) } : {}),
+  };
+
+  return {
+    cost: roundUSD6(totalCost),
+    tokenUsage,
+    cacheHit,
+  };
 }
 
 /**

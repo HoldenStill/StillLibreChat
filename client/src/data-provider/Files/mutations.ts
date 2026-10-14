@@ -232,3 +232,14 @@ export const useDeleteFilesMutation = (
     },
   });
 };
+
+export const usePromoteFileMutation = (): UseMutationResult<
+  t.TPromoteFileResponse,
+  unknown,
+  t.TPromoteFileRequest,
+  unknown
+> => {
+  return useMutation([MutationKeys.promoteFile], {
+    mutationFn: (body: t.TPromoteFileRequest) => dataService.promoteFile(body),
+  });
+};

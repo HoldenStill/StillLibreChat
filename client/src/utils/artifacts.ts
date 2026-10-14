@@ -16,7 +16,11 @@ import type { TStartupConfig, TAttachment, TFile } from 'librechat-data-provider
 import type { PhrasingContent } from 'mdast';
 import type { TranslationKeys } from '~/hooks/useLocalize';
 import type { Artifact } from '~/common';
-import { MERMAID_ARTIFACT_TYPE } from '~/common/artifacts';
+import {
+  CSV_ARTIFACT_TYPE,
+  MERMAID_ARTIFACT_TYPE,
+  WAVEDROM_ARTIFACT_TYPE,
+} from '~/common/artifacts';
 import { getCodeBlockFilename } from './downloadFile';
 
 const artifactFilename = {
@@ -447,6 +451,7 @@ export const TOOL_ARTIFACT_TYPES = {
   REACT: 'application/vnd.react',
   MARKDOWN: 'text/markdown',
   MERMAID: MERMAID_ARTIFACT_TYPE,
+  WAVEDROM: WAVEDROM_ARTIFACT_TYPE,
   PLAIN_TEXT: 'text/plain',
   CODE: 'application/vnd.code',
   /* Office-format rich previews. The backend renders the binary file as a
@@ -467,6 +472,47 @@ const TOOL_ARTIFACT_TYPE_VALUES: ReadonlySet<string> = new Set(Object.values(TOO
 
 export function isToolArtifactType(type: unknown): type is ToolArtifactType {
   return typeof type === 'string' && TOOL_ARTIFACT_TYPE_VALUES.has(type);
+}
+
+export function isWaveDromArtifactType(type?: string | null): boolean {
+  if (!type) {
+    return false;
+  }
+  const lower = type.trim().toLowerCase();
+  return (
+    lower === WAVEDROM_ARTIFACT_TYPE ||
+    lower === 'wavejson' ||
+    lower === 'wavedrom' ||
+    lower === 'application/wavejson'
+  );
+}
+
+export function isCsvArtifact(
+  artifact?: Pick<Artifact, 'type' | 'title' | 'language'> | null,
+): boolean {
+  if (!artifact) {
+    return false;
+  }
+  const lowerType = (artifact.type ?? '').trim().toLowerCase();
+  const lowerLang = (artifact.language ?? '').trim().toLowerCase();
+  const lowerTitle = (artifact.title ?? '').trim().toLowerCase();
+  if (
+    lowerType === CSV_ARTIFACT_TYPE ||
+    lowerType === 'application/csv' ||
+    lowerType === 'text/comma-separated-values' ||
+    lowerType === 'csv' ||
+    lowerLang === 'csv'
+  ) {
+    return true;
+  }
+  if (
+    (lowerType === TOOL_ARTIFACT_TYPES.SPREADSHEET ||
+      lowerType === TOOL_ARTIFACT_TYPES.PLAIN_TEXT) &&
+    lowerTitle.endsWith('.csv')
+  ) {
+    return true;
+  }
+  return false;
 }
 
 const lookupOwn = <T>(record: Record<string, T>, key: string): T | undefined =>
@@ -566,6 +612,11 @@ const ARTIFACT_TYPE_ALIASES: Record<string, string> = {
   'application/vnd.ant.react': TOOL_ARTIFACT_TYPES.REACT,
   'application/vnd.code-html': TOOL_ARTIFACT_TYPES.HTML,
   'text/md': TOOL_ARTIFACT_TYPES.MARKDOWN,
+  wavejson: TOOL_ARTIFACT_TYPES.WAVEDROM,
+  wavedrom: TOOL_ARTIFACT_TYPES.WAVEDROM,
+  'application/wavejson': TOOL_ARTIFACT_TYPES.WAVEDROM,
+  'text/csv': TOOL_ARTIFACT_TYPES.SPREADSHEET,
+  csv: TOOL_ARTIFACT_TYPES.SPREADSHEET,
 };
 
 const ARTIFACT_ROW_KINDS: Record<string, ArtifactRowKind> = {
@@ -588,6 +639,12 @@ const ARTIFACT_ROW_KINDS: Record<string, ArtifactRowKind> = {
     fallbackGlyph: 'text',
   },
   [TOOL_ARTIFACT_TYPES.MERMAID]: {
+    lang: '',
+    label: { key: 'com_ui_artifact_format_diagram' },
+    rendersPreview: true,
+    fallbackGlyph: 'diagram',
+  },
+  [TOOL_ARTIFACT_TYPES.WAVEDROM]: {
     lang: '',
     label: { key: 'com_ui_artifact_format_diagram' },
     rendersPreview: true,
@@ -900,6 +957,8 @@ const EXTENSION_TO_TOOL_ARTIFACT_TYPE: Record<string, ToolArtifactType> = {
   mdx: TOOL_ARTIFACT_TYPES.MARKDOWN,
   mmd: TOOL_ARTIFACT_TYPES.MERMAID,
   mermaid: TOOL_ARTIFACT_TYPES.MERMAID,
+  wavejson: TOOL_ARTIFACT_TYPES.WAVEDROM,
+  wavedrom: TOOL_ARTIFACT_TYPES.WAVEDROM,
   txt: TOOL_ARTIFACT_TYPES.PLAIN_TEXT,
   // ODT has no rich HTML producer — it stays on the markdown-text path.
   odt: TOOL_ARTIFACT_TYPES.PLAIN_TEXT,
@@ -938,6 +997,8 @@ const MIME_TO_TOOL_ARTIFACT_TYPE: Record<string, ToolArtifactType> = {
   'application/vnd.react': TOOL_ARTIFACT_TYPES.REACT,
   'application/vnd.ant.react': TOOL_ARTIFACT_TYPES.REACT,
   'application/vnd.mermaid': TOOL_ARTIFACT_TYPES.MERMAID,
+  'application/vnd.wavedrom': TOOL_ARTIFACT_TYPES.WAVEDROM,
+  'application/wavejson': TOOL_ARTIFACT_TYPES.WAVEDROM,
   // Code MIME types — codeapi serves these via Content-Type for source
   // files (`text/x-python`, `text/x-typescript`, etc.) so a file whose
   // extension was stripped or renamed upstream still routes to CODE.

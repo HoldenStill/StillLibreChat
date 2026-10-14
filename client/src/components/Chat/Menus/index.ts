@@ -1,3 +1,4 @@
+export { default as OpenRouterProviderSelector } from './OpenRouterProviderSelector';
 export { default as PresetsMenu } from './PresetsMenu';
 export { default as OpenSidebar } from './OpenSidebar';
 export { default as HeaderMenu } from './HeaderMenu';

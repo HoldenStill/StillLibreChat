@@ -102,3 +102,22 @@ export const useGetSharedStartupConfig = (
     },
   );
 };
+
+export const useGetOpenRouterEndpointsQuery = (
+  model?: string | null,
+  config?: UseQueryOptions<t.TOpenRouterEndpointsResponse>,
+): QueryObserverResult<t.TOpenRouterEndpointsResponse> => {
+  const queriesEnabled = useRecoilValue<boolean>(store.queriesEnabled);
+  const trimmedModel = typeof model === 'string' ? model.trim() : '';
+  return useQuery<t.TOpenRouterEndpointsResponse>(
+    [QueryKeys.openRouterEndpoints, trimmedModel],
+    () => dataService.getOpenRouterModelEndpoints(trimmedModel),
+    {
+      staleTime: 600_000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      ...config,
+      enabled: (config?.enabled ?? true) === true && queriesEnabled && trimmedModel.includes('/'),
+    },
+  );
+};

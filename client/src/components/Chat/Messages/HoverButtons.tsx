@@ -16,6 +16,7 @@ import { useMessagesIsSubmitting, useOptionalMessagesOperations } from '~/Provid
 import { useGenerationsByLatest, useLocalize } from '~/hooks';
 import { hasEditablePart } from './Content/editableParts';
 import { revealedQueuedTurnFamily } from '~/store/steer';
+import MessageCostBadge from './ui/MessageCostBadge';
 import { Fork } from '~/components/Conversations';
 import { hoverButtonClasses } from './styles';
 import MessageAudio from './MessageAudio';
@@ -290,6 +291,9 @@ const HoverButtons = ({
           className="active"
         />
       )}
+
+      {/* Per-Message Cost, Token Usage & Cache Warmth Badge */}
+      {!isCreatedByUser && !isActiveStreamingMessage && <MessageCostBadge message={message} />}
     </div>
   );
 };

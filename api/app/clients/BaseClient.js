@@ -39,6 +39,7 @@ const {
   rejectPrivateTextAdmission,
   bindPrivateTextPersistenceAbort,
   persistedReasoningOverrideFields,
+  buildMessageTelemetry,
 } = require('@librechat/api');
 const {
   Constants,
@@ -1211,6 +1212,28 @@ class BaseClient {
         completionTokens,
       });
     }
+
+    const telemetry = buildMessageTelemetry({
+      collectedUsage: this.collectedUsage,
+      usageEvents: this.usageEmitSink,
+      fallbackUsage: {
+        promptTokens,
+        completionTokens: responseMessage.tokenCount,
+        model: this.model ?? responseMessage.model,
+      },
+      pricing: { getMultiplier: db.getMultiplier, getCacheMultiplier: db.getCacheMultiplier },
+      endpointTokenConfig: this.options?.endpointTokenConfig,
+      resolveEndpointTokenConfig:
+        typeof this.resolveAgentEndpointTokenConfig === 'function'
+          ? (u) => this.resolveAgentEndpointTokenConfig(u)
+          : undefined,
+    });
+    if (telemetry != null) {
+      responseMessage.cost = telemetry.cost;
+      responseMessage.tokenUsage = telemetry.tokenUsage;
+      responseMessage.cacheHit = telemetry.cacheHit;
+    }
+
     await balanceReservations.release();
 
     if (userMessagePromise) {

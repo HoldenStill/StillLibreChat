@@ -23,6 +23,7 @@ const {
   checkToolResourceUploadPermission,
   resolveAssistantToolPermissions,
   resolveDownloadPath,
+  handlePromoteFileRequest,
 } = require('@librechat/api');
 const {
   isUUID,
@@ -952,6 +953,11 @@ const handleFileUpload = async (req, res) => {
   }
 };
 
+router.post('/promote', (req, res) =>
+  handlePromoteFileRequest(req, res, {
+    getFiles: db.getFiles,
+  }),
+);
 router.post('/', handleFileUpload);
 
 module.exports = router;

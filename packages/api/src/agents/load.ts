@@ -252,6 +252,15 @@ export async function loadAgent(
     return null;
   }
 
+  const requestedProvider = (model_parameters as { openRouterProvider?: string } | undefined)
+    ?.openRouterProvider;
+  if (typeof requestedProvider === 'string' && requestedProvider.trim().length > 0) {
+    agent.model_parameters = {
+      ...agent.model_parameters,
+      openRouterProvider: requestedProvider.trim(),
+    } as AgentModelParameters;
+  }
+
   agent.version ??= agent.versions?.length ?? 0;
   return agent;
 }

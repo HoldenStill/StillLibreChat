@@ -95,6 +95,8 @@ export type TEndpointOption = Pick<
   | 'examples'
   // Context
   | 'context'
+  // OpenRouter provider routing
+  | 'openRouterProvider'
 > & {
   // Fields specific to endpoint options that don't exist on TConversation
   modelDisplayLabel?: string;
@@ -1360,4 +1362,33 @@ export type TLangfuseSessionLinkResponse = {
   url: string | null;
   /** Opaque identity of the project `url` opens, so a caller can tell whether it holds what it showed. */
   destinationId?: string;
+};
+
+export type TOpenRouterEndpointItem = {
+  name: string;
+  providerName?: string;
+  tag?: string;
+  contextLength?: number;
+  maxCompletionTokens?: number | null;
+  pricing: {
+    promptPerMillion?: number;
+    completionPerMillion?: number;
+    prompt?: number;
+    completion?: number;
+    request?: number;
+    image?: number;
+    cacheReadPerMillion?: number;
+  };
+  latencyMs?: number | null;
+  uptimeLast30m?: number | null;
+  status?: number | string;
+};
+
+export type TOpenRouterProviderEndpoint = TOpenRouterEndpointItem;
+
+export type TOpenRouterEndpointsResponse = {
+  model: string;
+  modelName?: string;
+  endpoints: TOpenRouterEndpointItem[];
+  cached?: boolean;
 };

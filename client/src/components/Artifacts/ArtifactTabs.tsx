@@ -5,10 +5,13 @@ import type { SandpackPreviewRef } from '@codesandbox/sandpack-react/unstyled';
 import type { editor } from 'monaco-editor';
 import type { ProcessedMermaidSvg } from '~/utils/diagram/export';
 import { MermaidRenderer } from '~/components/Messages/Content/Mermaid/Mermaid';
+import { isCsvArtifact, isWaveDromArtifactType } from '~/utils/artifacts';
 import { MERMAID_ARTIFACT_TYPE, type Artifact } from '~/common/artifacts';
 import { useArtifactCode } from '~/Providers/EditorContext';
 import { ArtifactCodeEditor } from './ArtifactCodeEditor';
+import CsvTelemetryViewer from './CsvTelemetryViewer';
 import { lazyWithRecovery } from '~/lib/assets/lazy';
+import WaveDromViewer from './WaveDromViewer';
 import { useLocalize } from '~/hooks';
 
 const SandboxArtifactTabs = lazyWithRecovery(() => import('./SandboxArtifactTabs'));
@@ -84,6 +87,68 @@ function MermaidArtifactTabs({
   );
 }
 
+function WaveDromArtifactTabs({
+  artifact,
+  isSharedConvo,
+}: Omit<ArtifactTabsProps, 'previewRef' | 'onMermaidExportReady'>) {
+  const editedCode = useArtifactCode(artifact.id);
+  const monacoRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const content = editedCode ?? artifact.content ?? '';
+  const isReadOnly = isSharedConvo === true || artifact.index == null;
+
+  return (
+    <div className="flex h-full w-full flex-col">
+      <Tabs.Content
+        value="code"
+        id="artifacts-code"
+        className="h-full w-full grow overflow-auto"
+        tabIndex={-1}
+      >
+        <ArtifactCodeEditor artifact={artifact} monacoRef={monacoRef} readOnly={isReadOnly} />
+      </Tabs.Content>
+
+      <Tabs.Content
+        value="preview"
+        className="min-h-0 w-full flex-1 overflow-hidden p-4"
+        tabIndex={-1}
+      >
+        <WaveDromViewer key={artifact.id} content={content} title={artifact.title} />
+      </Tabs.Content>
+    </div>
+  );
+}
+
+function CsvArtifactTabs({
+  artifact,
+  isSharedConvo,
+}: Omit<ArtifactTabsProps, 'previewRef' | 'onMermaidExportReady'>) {
+  const editedCode = useArtifactCode(artifact.id);
+  const monacoRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const content = editedCode ?? artifact.content ?? '';
+  const isReadOnly = isSharedConvo === true || artifact.index == null;
+
+  return (
+    <div className="flex h-full w-full flex-col">
+      <Tabs.Content
+        value="code"
+        id="artifacts-code"
+        className="h-full w-full grow overflow-auto"
+        tabIndex={-1}
+      >
+        <ArtifactCodeEditor artifact={artifact} monacoRef={monacoRef} readOnly={isReadOnly} />
+      </Tabs.Content>
+
+      <Tabs.Content
+        value="preview"
+        className="min-h-0 w-full flex-1 overflow-hidden p-4"
+        tabIndex={-1}
+      >
+        <CsvTelemetryViewer key={artifact.id} content={content} title={artifact.title} />
+      </Tabs.Content>
+    </div>
+  );
+}
+
 export default function ArtifactTabs(props: ArtifactTabsProps) {
   if (props.artifact.type === MERMAID_ARTIFACT_TYPE) {
     return (
@@ -93,6 +158,14 @@ export default function ArtifactTabs(props: ArtifactTabsProps) {
         onMermaidExportReady={props.onMermaidExportReady}
       />
     );
+  }
+
+  if (isWaveDromArtifactType(props.artifact.type)) {
+    return <WaveDromArtifactTabs artifact={props.artifact} isSharedConvo={props.isSharedConvo} />;
+  }
+
+  if (isCsvArtifact(props.artifact)) {
+    return <CsvArtifactTabs artifact={props.artifact} isSharedConvo={props.isSharedConvo} />;
   }
 
   return (

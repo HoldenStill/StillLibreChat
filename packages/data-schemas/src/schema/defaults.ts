@@ -217,6 +217,10 @@ export const conversationPreset: {
   verbosity: {
     type: StringConstructor;
   };
+  /** OpenRouter provider routing preference */
+  openRouterProvider: {
+    type: StringConstructor;
+  };
 } = {
   endpoint: {
     type: String,
@@ -408,6 +412,10 @@ export const conversationPreset: {
   },
   /** Verbosity control */
   verbosity: {
+    type: String,
+  },
+  /** OpenRouter provider routing preference */
+  openRouterProvider: {
     type: String,
   },
 };

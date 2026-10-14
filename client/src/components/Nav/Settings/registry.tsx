@@ -44,6 +44,7 @@ import { ForkSettings } from '../SettingsTabs/Chat/ForkSettings';
 import ChatDirection from '../SettingsTabs/Chat/ChatDirection';
 import { DeleteCache } from '../SettingsTabs/Data/DeleteCache';
 import { ManageFiles } from '../SettingsTabs/Data/ManageFiles';
+import { showMessageCostAtom } from '~/store/showMessageCost';
 import { smoothStreamingAtom } from '~/store/smoothStreaming';
 import ChangeEmail from '../SettingsTabs/Account/ChangeEmail';
 import { RevokeKeys } from '../SettingsTabs/Data/RevokeKeys';
@@ -421,6 +422,19 @@ export const registry: SettingEntry[] = [
       stateAtom: showThinkingAtom,
       localizationKey: 'com_nav_show_thinking',
       switchId: 'showThinking',
+    }),
+  },
+  {
+    id: 'showMessageCost',
+    tab: CHAT,
+    section: 'messages',
+    labelKey: 'com_nav_show_message_cost',
+    keywords: ['cost', 'tokens', 'cache', 'price', 'usage', 'badge', 'telemetry'],
+    Component: toggleControl({
+      stateAtom: showMessageCostAtom,
+      localizationKey: 'com_nav_show_message_cost',
+      switchId: 'showMessageCost',
+      hoverCardText: 'com_nav_info_show_message_cost',
     }),
   },
   {

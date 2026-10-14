@@ -15,6 +15,8 @@ import {
   renderAttachmentKey,
 } from './attachmentTypes';
 import { useLocalize, useAttachmentPreviewSync, useExpandCollapse } from '~/hooks';
+import PromoteArtifactMenu from '~/components/Artifacts/PromoteArtifactMenu';
+import CsvTelemetryViewer from '~/components/Artifacts/CsvTelemetryViewer';
 import FileContainer from '~/components/Chat/Input/Files/FileContainer';
 import { fileToArtifact, TOOL_ARTIFACT_TYPES } from '~/utils/artifacts';
 import Image from '~/components/Chat/Messages/Content/Image';
@@ -153,7 +155,7 @@ const FileAttachment = memo(({ attachment }: { attachment: Partial<TAttachment> 
   return (
     <div
       className={cn(
-        'file-attachment-container',
+        'file-attachment-container flex items-center gap-1.5',
         'transition-all duration-300 ease-out',
         isVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
       )}
@@ -171,6 +173,13 @@ const FileAttachment = memo(({ attachment }: { attachment: Partial<TAttachment> 
         containerClassName="max-w-fit"
         buttonClassName="bg-surface-secondary hover:cursor-pointer hover:bg-surface-hover active:bg-surface-secondary focus:bg-surface-hover hover:border-border-heavy active:border-border-heavy"
       />
+      {attachment.filename && (
+        <PromoteArtifactMenu
+          filename={attachment.filename}
+          fileId={file.file_id}
+          buttonClassName="size-8 p-1.5"
+        />
+      )}
     </div>
   );
 });
@@ -372,30 +381,39 @@ const TextAttachment = memo(
               )}
             </div>
           )}
-          <div className="p-4">
-            <pre
-              id={preId}
-              ref={preRef}
-              className={cn(
-                'text-text-primary font-mono text-sm leading-6 break-words whitespace-pre-wrap',
-                isClamped ? 'overflow-hidden' : 'overflow-auto',
-              )}
-              style={isClamped ? { maxHeight: collapsedMaxHeight } : undefined}
-            >
-              {text}
-            </pre>
-            {overflowed && (
-              <button
-                type="button"
-                onClick={() => setExpanded((prev) => !prev)}
-                aria-expanded={expanded}
-                aria-controls={preId}
-                className="text-text-secondary hover:text-text-primary focus-visible:ring-focus-subtle mt-2 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          {extension?.toLowerCase() === 'csv' && text.trim().length > 0 ? (
+            <CsvTelemetryViewer
+              content={text}
+              title={visibleFilename}
+              inline
+              className="my-0 border-0"
+            />
+          ) : (
+            <div className="p-4">
+              <pre
+                id={preId}
+                ref={preRef}
+                className={cn(
+                  'text-text-primary font-mono text-sm leading-6 break-words whitespace-pre-wrap',
+                  isClamped ? 'overflow-hidden' : 'overflow-auto',
+                )}
+                style={isClamped ? { maxHeight: collapsedMaxHeight } : undefined}
               >
-                {expanded ? localize('com_ui_collapse') : localize('com_ui_show_all')}
-              </button>
-            )}
-          </div>
+                {text}
+              </pre>
+              {overflowed && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  aria-expanded={expanded}
+                  aria-controls={preId}
+                  className="text-text-secondary hover:text-text-primary focus-visible:ring-focus-subtle mt-2 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                >
+                  {expanded ? localize('com_ui_collapse') : localize('com_ui_show_all')}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );

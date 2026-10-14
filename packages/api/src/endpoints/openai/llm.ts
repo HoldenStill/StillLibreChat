@@ -21,6 +21,7 @@ import {
   constructAzureChatBasePath,
   constructAzureInstanceBasePath,
 } from '~/utils/azure';
+import { buildOpenRouterProviderRouting } from '~/endpoints/openrouter/providers';
 import { isEnabled } from '~/utils/common';
 
 type OpenAILLMConfig = Omit<Partial<t.OAIClientOptions>, 'verbosity'> &
@@ -632,11 +633,16 @@ export function getOpenAILLMConfig({
     web_search,
     promptCache,
     promptCacheTtl,
+    openRouterProvider,
     frequency_penalty,
     presence_penalty,
     ...modelOptions
   } = cleanedModelOptions as Partial<
-    t.OpenAIParameters & { promptCache?: boolean; promptCacheTtl?: '5m' | '1h' }
+    t.OpenAIParameters & {
+      promptCache?: boolean;
+      promptCacheTtl?: '5m' | '1h';
+      openRouterProvider?: string | null;
+    }
   >;
 
   const llmConfig = Object.assign(
@@ -820,6 +826,12 @@ export function getOpenAILLMConfig({
         modelKwargs,
         llmConfig,
       }) || hasModelKwargs;
+  }
+
+  const providerRouting = buildOpenRouterProviderRouting(openRouterProvider);
+  if (providerRouting && (useOpenRouter || openRouterProvider != null)) {
+    modelKwargs.provider = providerRouting;
+    hasModelKwargs = true;
   }
 
   if (llmConfig.max_tokens != null) {

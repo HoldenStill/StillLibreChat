@@ -5,6 +5,8 @@ export interface CodeBlock {
 }
 
 export const MERMAID_ARTIFACT_TYPE = 'application/vnd.mermaid' as const;
+export const WAVEDROM_ARTIFACT_TYPE = 'application/vnd.wavedrom' as const;
+export const CSV_ARTIFACT_TYPE = 'text/csv' as const;
 
 /**
  * Original-file download metadata for artifacts backed by a real

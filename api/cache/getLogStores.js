@@ -78,6 +78,7 @@ const namespaces = {
     CacheKeys.AGENT_LINKED_INSTRUCTIONS,
     Time.FIVE_MINUTES,
   ),
+  [CacheKeys.OPENROUTER_ENDPOINTS]: standardCache(CacheKeys.OPENROUTER_ENDPOINTS, Time.TEN_MINUTES),
 };
 
 /**

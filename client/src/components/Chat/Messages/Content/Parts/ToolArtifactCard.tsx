@@ -191,6 +191,7 @@ const ToolArtifactCard = memo(({ attachment, artifact }: ToolArtifactCardProps) 
       onOpen={handleOpen}
       onDownload={handleDownload}
       artifactId={artifact.id}
+      artifact={artifact}
     />
   );
 });

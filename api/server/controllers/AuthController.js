@@ -18,6 +18,7 @@ const {
   isTokenRetired,
   isTwoFactorEnrollmentRequired,
   sanitizeUserForAuthResponse,
+  resolveProxyHeaderIdentity,
 } = require('@librechat/api');
 const {
   requestPasswordReset,
@@ -33,6 +34,7 @@ const {
   awaitAuthUserDocEviction,
   deleteSession,
   getUserById,
+  findUser,
   findSession,
   updateUser,
   deleteTokens,
@@ -595,6 +597,19 @@ const refreshController = async (req, res) => {
       }
 
       return res.status(403).send('Invalid OpenID refresh token');
+    }
+  }
+
+  if (!parsedCookies.refreshToken) {
+    const proxyAuth = await resolveProxyHeaderIdentity(req, { findUser });
+    if (proxyAuth?.authenticated && proxyAuth.user?.id) {
+      const token = await runInUserTenant(proxyAuth.user, async () =>
+        setAuthTokens(proxyAuth.user.id, res, null, req),
+      );
+      return res.status(200).send({
+        token,
+        user: sanitizeUserForAuthResponse(proxyAuth.user),
+      });
     }
   }
 

@@ -76,6 +76,7 @@ const ArtifactButton = ({ artifact }: { artifact: Artifact | null }) => {
       isSelected={isSelected}
       onOpen={handleOpen}
       artifactId={artifact.id}
+      artifact={artifact}
     />
   );
 };

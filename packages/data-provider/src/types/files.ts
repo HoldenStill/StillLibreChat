@@ -335,3 +335,19 @@ export type DeleteMutationOptions = {
    * and a storage failure that keeps failing would otherwise announce itself on every retry. */
   silent?: boolean;
 };
+
+export type TPromoteFileTarget = 'exports' | 'vault_staging';
+
+export type TPromoteFileRequest = {
+  filename: string;
+  target: TPromoteFileTarget;
+  file_id?: string;
+  content?: string;
+};
+
+export type TPromoteFileResponse = {
+  ok: true;
+  destinationPath: string;
+  target: TPromoteFileTarget;
+  filename: string;
+};

@@ -929,6 +929,17 @@ const agentFadingTierSchema = z.object({
   masked: z.boolean(),
 });
 
+export const tMessageTokenUsageSchema = z.object({
+  promptTokens: z.number(),
+  completionTokens: z.number(),
+  totalTokens: z.number(),
+  cachedTokens: z.number().optional(),
+  cacheWriteTokens: z.number().optional(),
+  inputCost: z.number().optional(),
+  outputCost: z.number().optional(),
+  cacheSavings: z.number().optional(),
+});
+
 export const tMessageSchema = z.object({
   messageId: z.string(),
   endpoint: z.string().optional(),
@@ -978,6 +989,12 @@ export const tMessageSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
   /** Output tokens for assistant messages, calibrated prompt-side estimate for user messages */
   tokenCount: z.number().optional(),
+  /** Per-message USD cost (up to 6 decimal places) */
+  cost: z.number().optional(),
+  /** Granular per-message token and cache telemetry */
+  tokenUsage: tMessageTokenUsageSchema.optional(),
+  /** True when cached prompt tokens were used (`cachedTokens > 0`) */
+  cacheHit: z.boolean().optional(),
   contextMeta: z
     .object({
       calibrationRatio: z
@@ -1313,6 +1330,8 @@ export const tConversationSchema = z.object({
   isTemporary: z.boolean().optional(),
   /* file token limits */
   fileTokenLimit: coerceNumber.optional(),
+  /* OpenRouter provider routing preference */
+  openRouterProvider: z.string().nullable().optional(),
   /** @deprecated */
   resendImages: z.boolean().optional(),
   /** @deprecated Prefer `modelLabel` over `chatGptLabel` */
@@ -1447,6 +1466,8 @@ export const tQueryParamsSchema = tConversationSchema
     instructions: true,
     /** @endpoints openAI, google, anthropic */
     fileTokenLimit: true,
+    /** @endpoints custom (OpenRouter), agents */
+    openRouterProvider: true,
   })
   .merge(
     z.object({
@@ -1690,6 +1711,7 @@ export const agentsBaseSchema = tConversationSchema.pick({
   iconURL: true,
   greeting: true,
   maxContextTokens: true,
+  openRouterProvider: true,
 });
 
 export const agentsSchema = agentsBaseSchema
@@ -1710,6 +1732,7 @@ export const agentsSchema = agentsBaseSchema
     iconURL: obj.iconURL ?? undefined,
     greeting: obj.greeting ?? undefined,
     maxContextTokens: obj.maxContextTokens ?? undefined,
+    openRouterProvider: obj.openRouterProvider ?? undefined,
   }))
   .catch(() => ({
     model: agentsSettings.model.default,
@@ -1726,6 +1749,7 @@ export const agentsSchema = agentsBaseSchema
     iconURL: undefined,
     greeting: undefined,
     maxContextTokens: undefined,
+    openRouterProvider: undefined,
   }));
 
 export const openAIBaseSchema = tConversationSchema.pick({
@@ -1756,6 +1780,7 @@ export const openAIBaseSchema = tConversationSchema.pick({
   web_search: true,
   disableStreaming: true,
   fileTokenLimit: true,
+  openRouterProvider: true,
 });
 
 export const openAISchema = openAIBaseSchema

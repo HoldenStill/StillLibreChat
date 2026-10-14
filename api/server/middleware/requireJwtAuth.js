@@ -14,8 +14,9 @@ const {
   getValidOpenIdReuseUserId,
   generateTwoFactorSetupToken,
   isTwoFactorEnrollmentRequired,
+  resolveProxyHeaderIdentity,
 } = require('@librechat/api');
-const { getUserById } = require('~/models');
+const { getUserById, findUser } = require('~/models');
 
 const hasPassportStrategy = (strategy) =>
   typeof passport._strategy === 'function' && passport._strategy(strategy) != null;
@@ -179,11 +180,25 @@ const requireJwtAuth = (req, res, next) => {
           });
           return authenticateWithStrategy(index + 1);
         }
-        logAuthenticationFailure({ strategy, info, status, err });
-        return res.status(status || 401).json({
-          message: info?.message || 'Unauthorized',
-          ...(info?.code === ACCOUNT_DELETION_CODE && { code: ACCOUNT_DELETION_CODE }),
-        });
+        return Promise.resolve(resolveProxyHeaderIdentity(req, { findUser }))
+          .then((proxyAuth) => {
+            if (proxyAuth?.authenticated && proxyAuth.user) {
+              req.user = proxyAuth.user;
+              req.authStrategy = 'proxyHeader';
+              return tenantContextMiddleware(req, res, (tenantErr) => {
+                if (tenantErr) {
+                  return next(tenantErr);
+                }
+                refreshCloudFrontCookies(req, res, next);
+              });
+            }
+            logAuthenticationFailure({ strategy, info, status, err });
+            return res.status(status || 401).json({
+              message: info?.message || 'Unauthorized',
+              ...(info?.code === ACCOUNT_DELETION_CODE && { code: ACCOUNT_DELETION_CODE }),
+            });
+          })
+          .catch((proxyErr) => next(proxyErr));
       }
       if (strategy === 'openidJwt' && getAuthenticatedUserId(user) !== openIdReuseUserId) {
         if (index + 1 < strategies.length) {

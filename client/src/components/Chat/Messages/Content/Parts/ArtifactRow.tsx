@@ -10,7 +10,9 @@ import {
   Workflow,
 } from 'lucide-react';
 import type { ArtifactGlyph, ArtifactRowKind } from '~/utils/artifacts';
+import type { Artifact } from '~/common';
 import LangIcon, { hasLangIcon } from '~/components/Messages/Content/LangIcon';
+import PromoteArtifactMenu from '~/components/Artifacts/PromoteArtifactMenu';
 import { ROW_GLYPH_SLOT, TOOL_ROW_CLASSES } from '../rows';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
@@ -40,6 +42,8 @@ interface ArtifactRowProps {
   onDownload?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   /** Stable trigger id, for the panel's focus handoff and for e2e. */
   artifactId?: string;
+  /** Optional artifact metadata to enable one-click Promote to Exports / Stage to Vault. */
+  artifact?: Artifact;
 }
 
 /**
@@ -64,7 +68,7 @@ interface ArtifactRowProps {
  * or source to read, which is what the panel does differently.
  */
 const ArtifactRow = forwardRef<HTMLButtonElement, ArtifactRowProps>(function ArtifactRow(
-  { title, kind, isSelected, onOpen, onDownload, artifactId },
+  { title, kind, isSelected, onOpen, onDownload, artifactId, artifact },
   ref,
 ) {
   const localize = useLocalize();
@@ -133,6 +137,7 @@ const ArtifactRow = forwardRef<HTMLButtonElement, ArtifactRowProps>(function Art
           <Download className="size-4" aria-hidden="true" />
         </Button>
       )}
+      {artifact != null && <PromoteArtifactMenu artifact={artifact} buttonClassName="size-5 p-0" />}
     </div>
   );
 });

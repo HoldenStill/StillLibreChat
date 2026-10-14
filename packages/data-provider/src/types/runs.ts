@@ -326,6 +326,18 @@ export type TResponseUsage = {
   cost?: number;
 };
 
+/** Granular per-message token and cost telemetry persisted on `Message`. */
+export type TMessageTokenUsage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  cachedTokens?: number;
+  cacheWriteTokens?: number;
+  inputCost?: number;
+  outputCost?: number;
+  cacheSavings?: number;
+};
+
 /** Provider-reported usage for a single completed model call. */
 export type TTokenUsageEvent = {
   input_tokens?: number;

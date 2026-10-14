@@ -8,7 +8,7 @@ import {
   Permissions,
   isForcedTemporaryRetention,
 } from 'librechat-data-provider';
-import { OpenSidebar, PresetsMenu, NewChat, HeaderMenu } from './Menus';
+import { OpenSidebar, PresetsMenu, NewChat, HeaderMenu, OpenRouterProviderSelector } from './Menus';
 import { TemporaryChat, TemporaryChatIndicator } from './TemporaryChat';
 import useDrawerViewport from '~/hooks/Nav/useDrawerViewport';
 import ModelSelector from './Menus/Endpoints/ModelSelector';
@@ -99,6 +99,7 @@ function Header({
           <SubagentThreadLink threadId={parentConversationId} labelClassName="hidden lg:inline" />
         )}
         {!readOnly && <ModelSelector startupConfig={startupConfig} />}
+        {!readOnly && <OpenRouterProviderSelector />}
         {!readOnly && interfaceConfig.presets === true && interfaceConfig.modelSelect === true && (
           <PresetsMenu />
         )}

@@ -1,6 +1,7 @@
 import type {
   TFeedbackRating,
   TFeedbackTag,
+  TMessageTokenUsage,
   TReasoningOverride,
   UserSubmittedMessageFieldPath,
 } from 'librechat-data-provider';
@@ -57,6 +58,9 @@ export interface IMessage extends Document {
   parentMessageId?: string | null;
   tokenCount?: number;
   summaryTokenCount?: number;
+  cost?: number;
+  tokenUsage?: TMessageTokenUsage;
+  cacheHit?: boolean;
   sender?: string;
   text?: string;
   summary?: string;

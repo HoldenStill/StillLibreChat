@@ -912,6 +912,11 @@ export function areMessageFieldsEqual(
     prevMsg.endpoint === nextMsg.endpoint &&
     prevMsg.iconURL === nextMsg.iconURL &&
     prevMsg.feedback?.rating === nextMsg.feedback?.rating &&
+    prevMsg.cost === nextMsg.cost &&
+    prevMsg.cacheHit === nextMsg.cacheHit &&
+    prevMsg.tokenUsage?.promptTokens === nextMsg.tokenUsage?.promptTokens &&
+    prevMsg.tokenUsage?.completionTokens === nextMsg.tokenUsage?.completionTokens &&
+    prevMsg.tokenUsage?.cachedTokens === nextMsg.tokenUsage?.cachedTokens &&
     areMessageFilesEqual(prevMsg.files, nextMsg.files) &&
     (prevMsg.attachments?.length ?? 0) === (nextMsg.attachments?.length ?? 0) &&
     (prevMsg.manualSkills?.length ?? 0) === (nextMsg.manualSkills?.length ?? 0) &&

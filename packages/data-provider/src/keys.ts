@@ -114,6 +114,8 @@ export enum QueryKeys {
   agentQueuedTurns = 'agentQueuedTurns',
   /* Combined Pinned-section display order (favorites + pinned chats) */
   pinnedOrder = 'pinnedOrder',
+  /* OpenRouter live provider endpoints and pricing */
+  openRouterEndpoints = 'openRouterEndpoints',
 }
 
 // Dynamic query keys that require parameters
@@ -143,6 +145,7 @@ export enum MutationKeys {
   fileUpload = 'fileUpload',
   fileDelete = 'fileDelete',
   fileUsage = 'fileUsage',
+  promoteFile = 'promoteFile',
   updatePreset = 'updatePreset',
   deletePreset = 'deletePreset',
   loginUser = 'loginUser',

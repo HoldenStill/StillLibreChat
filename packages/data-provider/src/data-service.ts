@@ -1868,3 +1868,13 @@ export function revokeScheduleMCPConsent(id: string, expectedRevision: string): 
     data: { expectedRevision },
   });
 }
+
+export function getOpenRouterModelEndpoints(
+  model: string,
+): Promise<t.TOpenRouterEndpointsResponse> {
+  return request.get(endpoints.openRouterModelEndpoints(model));
+}
+
+export function promoteFile(payload: f.TPromoteFileRequest): Promise<f.TPromoteFileResponse> {
+  return request.post(endpoints.filePromote(), payload);
+}

@@ -25,6 +25,7 @@ import CopyButton from '~/components/Messages/Content/CopyButton';
 import { ARTIFACTS_SHEET_MAX_WIDTH } from '~/utils/breakpoints';
 import useArtifacts from '~/hooks/Artifacts/useArtifacts';
 import useScaledMaxWidth from '~/hooks/useScaledMaxWidth';
+import PromoteArtifactMenu from './PromoteArtifactMenu';
 import { useFocusTrap, useLocalize } from '~/hooks';
 import DownloadArtifact from './DownloadArtifact';
 import ArtifactVersion from './ArtifactVersion';
@@ -618,6 +619,13 @@ export default function Artifacts() {
                 />
               ) : (
                 <DownloadArtifact artifact={currentArtifact} />
+              )}
+              {!isSharedConvo && (
+                <PromoteArtifactMenu
+                  artifact={currentArtifact}
+                  portalElement={overlayPortal}
+                  buttonClassName="h-9 w-9 p-0"
+                />
               )}
               {/* A capability that turns off while the pane is out there must
                   not take away the only way back, so an undocked pane always

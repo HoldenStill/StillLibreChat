@@ -227,6 +227,9 @@ export const tokenConfig = () => `${BASE_URL}/api/endpoints/token-config`;
 
 export const models = () => `${BASE_URL}/api/models`;
 
+export const openRouterModelEndpoints = (model: string) =>
+  `${BASE_URL}/api/models/openrouter/endpoints?model=${encodeURIComponent(model)}`;
+
 export const tokenizer = () => `${BASE_URL}/api/tokenizer`;
 
 export const login = () => `${BASE_URL}/api/auth/login`;
@@ -405,6 +408,7 @@ export const filePreview = (fileId: string) =>
 export const fileConfig = () => `${BASE_URL}/api/files/config`;
 /** Owner-scoped usage touch so queued attachments outlive the upload-window TTL. */
 export const fileUsage = () => `${BASE_URL}/api/files/usage`;
+export const filePromote = () => `${BASE_URL}/api/files/promote`;
 export const agentFiles = (agentId: string) => `${BASE_URL}/api/files/agent/${agentId}`;
 
 export const images = () => `${files()}/images`;

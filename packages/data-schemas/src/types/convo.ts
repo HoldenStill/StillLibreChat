@@ -352,6 +352,7 @@ export interface IConversation extends Document {
   url_context?: boolean;
   disableStreaming?: boolean;
   fileTokenLimit?: number;
+  openRouterProvider?: string | null;
   // Additional fields
   files?: string[];
   expiredAt?: Date;

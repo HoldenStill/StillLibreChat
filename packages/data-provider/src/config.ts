@@ -4099,6 +4099,21 @@ export const configSchema = z.object({
       enabled: z.boolean().optional(),
     })
     .optional(),
+  /** File promotion targets for exporting artifacts to persistent host mounts (`/app/exports` or `/app/vault/staging`). */
+  filePromotion: z
+    .object({
+      exportsDir: z.string().default('/app/exports'),
+      vaultStagingDir: z.string().default('/app/vault/staging'),
+      sandboxSharedDir: z.string().default('/mnt/data'),
+    })
+    .optional(),
+  /** Reverse-proxy identity header SSO settings (can also be enabled via `TRUST_PROXY_AUTH=true`). */
+  proxyAuth: z
+    .object({
+      enabled: z.boolean().default(false),
+      adminEmail: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -4647,6 +4662,10 @@ export enum CacheKeys {
    * Key for pending WebAuthn (passkey) ceremony challenges (one-time-use, short TTL).
    */
   PASSKEY_CHALLENGE = 'PASSKEY_CHALLENGE',
+  /**
+   * Key for cached OpenRouter per-model provider endpoints and live pricing (`EX 600`).
+   */
+  OPENROUTER_ENDPOINTS = 'OPENROUTER_ENDPOINTS',
 }
 
 export const AUTH_USER_DOC_BY_ID_PREFIX = 'auth-user-doc-byid';
@@ -5430,6 +5449,8 @@ export enum LocalStorageKeys {
   PIN_CODE_INTERPRETER_ = 'PIN_CODE_INTERPRETER_',
   /** Key for the last selected code approval mode */
   LAST_CODE_APPROVAL_MODE = 'lastCodeApprovalMode',
+  /** Key for showing per-message cost and token telemetry badges */
+  SHOW_MESSAGE_COST = 'showMessageCost',
 }
 
 export enum ForkOptions {
